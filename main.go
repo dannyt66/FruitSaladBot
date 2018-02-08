@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -15,7 +17,7 @@ import (
 const (
 	VERSION_MAJOR = 0
 	VERSION_MINOR = 0
-	VERSION_PATCH = 1
+	VERSION_PATCH = 2
 )
 
 var (
@@ -32,8 +34,6 @@ func init() {
 }
 
 func main() {
-	log.Println("Starting up... v" + versionString)
-
 	if flagDiscordToken == "" {
 		log.Fatal("No Discord token specified.")
 	}
@@ -63,6 +63,38 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if m.Author.ID == s.State.User.ID {
 		return
+	}
+
+	if strings.HasPrefix(m.Content, prefix+" add") {
+		roleName := m.Content[11:len(m.Content)]
+		channel, err := s.State.Channel(m.ChannelID)
+		if err != nil {
+		}
+		guildRoles, err := s.GuildRoles(channel.GuildID)
+		if err != nil {
+		}
+		roleID := ""
+		for i := 0; i < len(guildRoles); i++ {
+			if guildRoles[i].Name == roleName {
+				roleID = strconv.Itoa(i)
+			}
+		}
+		if roleID == "" {
+			s.ChannelMessageSend(m.ChannelID, roleName+"was not found on this server.")
+		} else {
+			roleIDInt, err := strconv.Atoi(roleID)
+			data, _ := json.Marshal(guildRoles[roleIDInt])
+			f, err := os.OpenFile("./allowedRoles.json", os.O_APPEND|os.O_WRONLY, 0644)
+			if err != nil {
+				panic(err)
+			}
+
+			defer f.Close()
+
+			if _, err = f.WriteString(string(data[:])); err != nil {
+				panic(err)
+			}
+		}
 	}
 
 	if strings.HasPrefix(m.Content, prefix+" apply") {
