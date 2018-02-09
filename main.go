@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	VERSION_MAJOR = 0
+	VERSION_MAJOR = 1
 	VERSION_MINOR = 0
-	VERSION_PATCH = 2
+	VERSION_PATCH = 0
 )
 
 var (
@@ -109,7 +109,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, availableRoles)
 	}
 
-	if strings.HasPrefix(m.Content, prefix+" add") && (m.Author.ID == guildAdmin || m.Author.ID == "255529261979402240") {
+	if strings.HasPrefix(m.Content, prefix+" add") && (m.Author.ID == guildAdmin) {
 		roleName := m.Content[11:len(m.Content)]
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
