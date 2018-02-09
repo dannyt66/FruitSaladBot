@@ -168,7 +168,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if strings.HasPrefix(m.Content, prefix+" apply") {
-		roleName := m.Content[20:len(m.Content)]
+		roleName := m.Content[19:len(m.Content)]
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 		}
@@ -189,7 +189,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if strings.HasPrefix(m.Content, prefix+" remove") {
-		roleName := m.Content[21:len(m.Content)]
+		roleName := m.Content[20:len(m.Content)]
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 		}
