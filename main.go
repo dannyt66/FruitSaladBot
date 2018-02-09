@@ -19,7 +19,7 @@ import (
 const (
 	VERSION_MAJOR = 1
 	VERSION_MINOR = 0
-	VERSION_PATCH = 0
+	VERSION_PATCH = 1
 )
 
 var (
@@ -111,6 +111,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if strings.HasPrefix(m.Content, prefix+" add") && (m.Author.ID == guildAdmin) {
 		roleName := m.Content[11:len(m.Content)]
+		for i := 0; i < len(loadedRoles); i++ {
+			if loadedRoles[i].Name == roleName {
+				s.ChannelMessageSend(m.ChannelID, "Role "+roleName+" is already in the list, and has not been added.")
+				return
+			}
+		}
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 		}
