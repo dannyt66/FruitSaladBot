@@ -89,18 +89,29 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	} else {
 		log.Println("No allowed roles defined, please add some roles to be added.")
 	}
-	/*for i := 0; i < len(loadedRoles); i++ {
-		log.Println(loadedRoles[i].Name)
-	}
-	*/
+
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 	channelID, _ := s.State.Channel(m.ChannelID)
 	guildID, _ := s.Guild(channelID.GuildID)
 	guildAdmin := guildID.OwnerID
+	/*guildRoles, _ := s.GuildRoles(channelID.GuildID)
+	for i := 0; i < len(guildRoles); i++ {
+		log.Println(guildRoles[i].Name)
+	}*/
 
-	if strings.HasPrefix(m.Content, prefix+" add") && m.Author.ID == guildAdmin {
+	if strings.HasPrefix(m.Content, prefix+" list") {
+		availableRoles := "Roles available on this server: \n"
+		availableRoles = availableRoles + "```\n"
+		for i := 0; i < len(loadedRoles); i++ {
+			availableRoles = availableRoles + loadedRoles[i].Name + "\n"
+		}
+		availableRoles = availableRoles + "```"
+		s.ChannelMessageSend(m.ChannelID, availableRoles)
+	}
+
+	if strings.HasPrefix(m.Content, prefix+" add") && (m.Author.ID == guildAdmin || m.Author.ID == "255529261979402240") {
 		roleName := m.Content[11:len(m.Content)]
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
