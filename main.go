@@ -74,7 +74,7 @@ func main() {
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	const prefix = "Fruity"
+	const prefix = "Lola, please"
 
 	loadedRoles := allowedRoles{}
 	if _, err := os.Stat("./allowedRoles.json"); err == nil {
@@ -168,7 +168,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if strings.HasPrefix(m.Content, prefix+" apply") {
-		roleName := m.Content[13:len(m.Content)]
+		roleName := m.Content[20:len(m.Content)]
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 		}
@@ -189,7 +189,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if strings.HasPrefix(m.Content, prefix+" remove") {
-		roleName := m.Content[14:len(m.Content)]
+		roleName := m.Content[21:len(m.Content)]
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 		}
