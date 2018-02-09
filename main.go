@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -33,6 +35,19 @@ func init() {
 	flag.Parse()
 }
 
+type allowedRole struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Managed     bool   `json:"managed"`
+	Mentionable bool   `json:"mentionable"`
+	Hoist       bool   `json:"hoist"`
+	Color       int    `json:"color"`
+	Position    int    `json:"position"`
+	Permissions int    `json:"permissions"`
+}
+
+type allowedRoles []*allowedRole
+
 func main() {
 	if flagDiscordToken == "" {
 		log.Fatal("No Discord token specified.")
@@ -49,7 +64,6 @@ func main() {
 	if err != nil {
 		log.Fatal("Error opening discord ws conn:", err)
 	}
-
 	log.Println("Ready received! Ctrl-c to stop.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
@@ -61,11 +75,32 @@ func main() {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	const prefix = "Fruity"
 
+	loadedRoles := allowedRoles{}
+	if _, err := os.Stat("./allowedRoles.json"); err == nil {
+		readFile, err := ioutil.ReadFile("./allowedRoles.json")
+		if err != nil {
+			log.Println("Opening roles file", err.Error())
+		}
+		decode := json.NewDecoder(bytes.NewReader(readFile))
+		err = decode.Decode(&loadedRoles)
+		if err != nil {
+			log.Println(err)
+		}
+	} else {
+		log.Println("No allowed roles defined, please add some roles to be added.")
+	}
+	/*for i := 0; i < len(loadedRoles); i++ {
+		log.Println(loadedRoles[i].Name)
+	}
+	*/
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
+	channelID, _ := s.State.Channel(m.ChannelID)
+	guildID, _ := s.Guild(channelID.GuildID)
+	guildAdmin := guildID.OwnerID
 
-	if strings.HasPrefix(m.Content, prefix+" add") {
+	if strings.HasPrefix(m.Content, prefix+" add") && m.Author.ID == guildAdmin {
 		roleName := m.Content[11:len(m.Content)]
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
@@ -80,10 +115,28 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 		}
 		if roleID == "" {
-			s.ChannelMessageSend(m.ChannelID, roleName+"was not found on this server.")
+			s.ChannelMessageSend(m.ChannelID, roleName+" was not found on this server.")
 		} else {
 			roleIDInt, err := strconv.Atoi(roleID)
 			data, _ := json.Marshal(guildRoles[roleIDInt])
+			log.Println("Begin file write")
+			err = ioutil.WriteFile("./allowedRoles.json", []byte("["), 0644)
+			if err != nil {
+			}
+			for i := 0; i < len(loadedRoles); i++ {
+				data, _ := json.Marshal(loadedRoles[i])
+				f, err := os.OpenFile("./allowedRoles.json", os.O_APPEND|os.O_WRONLY, 0644)
+				if err != nil {
+					panic(err)
+				}
+
+				defer f.Close()
+
+				if _, err = f.WriteString(string(data[:]) + ","); err != nil {
+					panic(err)
+				}
+
+			}
 			f, err := os.OpenFile("./allowedRoles.json", os.O_APPEND|os.O_WRONLY, 0644)
 			if err != nil {
 				panic(err)
@@ -91,9 +144,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 			defer f.Close()
 
-			if _, err = f.WriteString(string(data[:])); err != nil {
+			if _, err = f.WriteString(string(data[:]) + "]"); err != nil {
 				panic(err)
 			}
+
 		}
 	}
 
@@ -102,20 +156,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 		}
-		guildRoles, err := s.GuildRoles(channel.GuildID)
 		if err != nil {
 		}
 		roleID := ""
-		for i := 0; i < len(guildRoles); i++ {
-			if guildRoles[i].Name == roleName {
-				roleID = guildRoles[i].ID
+		for i := 0; i < len(loadedRoles); i++ {
+			if loadedRoles[i].Name == roleName {
+				roleID = loadedRoles[i].ID
 			}
 		}
 		if roleID == "" {
 			s.ChannelMessageSend(m.ChannelID, roleName+" was not found on this server.")
 		} else {
 			s.GuildMemberRoleAdd(channel.GuildID, m.Author.ID, roleID)
-			s.ChannelMessageSend(m.ChannelID, roleName)
+			s.ChannelMessageSend(m.ChannelID, "Given user <@"+m.Author.ID+"> "+roleName)
 		}
 	}
 
@@ -124,20 +177,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 		}
-		guildRoles, err := s.GuildRoles(channel.GuildID)
 		if err != nil {
 		}
 		roleID := ""
-		for i := 0; i < len(guildRoles); i++ {
-			if guildRoles[i].Name == roleName {
-				roleID = guildRoles[i].ID
+		for i := 0; i < len(loadedRoles); i++ {
+			if loadedRoles[i].Name == roleName {
+				roleID = loadedRoles[i].ID
 			}
 		}
 		if roleID == "" {
 			s.ChannelMessageSend(m.ChannelID, roleName+" was not found on this      server.")
 		} else {
 			s.GuildMemberRoleRemove(channel.GuildID, m.Author.ID, roleID)
-			s.ChannelMessageSend(m.ChannelID, roleName)
+			s.ChannelMessageSend(m.ChannelID, "Removed user <@"+m.Author.ID+"> from "+roleName)
 		}
 	}
 
