@@ -61,6 +61,7 @@ func main() {
 	dsession.AddHandler(messageCreate)
 
 	err = dsession.Open()
+	dsession.UpdateStatus(0, "with the GPL")
 	if err != nil {
 		log.Fatal("Error opening discord ws conn:", err)
 	}
@@ -93,13 +94,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
+
 	channelID, _ := s.State.Channel(m.ChannelID)
 	guildID, _ := s.Guild(channelID.GuildID)
 	guildAdmin := guildID.OwnerID
-	/*guildRoles, _ := s.GuildRoles(channelID.GuildID)
-	for i := 0; i < len(guildRoles); i++ {
-		log.Println(guildRoles[i].Name)
-	}*/
 
 	if strings.HasPrefix(m.Content, prefix+" list") {
 		availableRoles := "Roles available on this server: \n"
@@ -158,6 +156,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if _, err = f.WriteString(string(data[:]) + "]"); err != nil {
 				panic(err)
 			}
+			s.ChannelMessageSend(m.ChannelID, "Added "+roleName+" to available roles.")
 
 		}
 	}
