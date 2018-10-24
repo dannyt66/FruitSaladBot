@@ -49,9 +49,6 @@ const (
 // Can you store all the variables in one var block?
 var (
 	versionString = fmt.Sprintf("%d.%d.%d", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
-)
-
-var (
 	flagDiscordToken string
 )
 
