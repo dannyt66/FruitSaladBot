@@ -36,7 +36,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/dannyt66/discordgo" // < this needs to change. 
+	"github.com/bwmarrin/discordgo"
 )
 
 // Why are the MAJOR and PATCH version numbers the same?
