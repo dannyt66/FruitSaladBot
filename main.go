@@ -74,7 +74,7 @@ type allowedRole struct {
 	Permissions int    `json:"permissions"`
 }
 
-// An array of allowedRole pointers?
+// An array of allowedRoles consisting of data of the type allowedRole, defined above
 type allowedRoles []*allowedRole
 
 // Main function does main things. 
@@ -83,12 +83,13 @@ func main() {
 	if flagDiscordToken == "" {
 		log.Fatal("No Discord token specified.")
 	}
-	// Print error message to stdout.
+	// Create a Discord session object, with the error handler defined, the type of Bot, and the supplied API token.
 	dsession, err := discordgo.New("Bot " + flagDiscordToken)
+	// Print error message to stdout.
 	if err != nil {
 		log.Fatal("Error creating Discord session:", err)
 	}
-	// LOOKUP: what the fuck this does. 
+	// Create a handler for when a message is sent to a channel the bot is in. 
 	dsession.AddHandler(messageCreate)
 	// Opens the Discord session,store errors in err variable, sets Discord status. 
 	err = dsession.Open()
@@ -99,11 +100,11 @@ func main() {
 	}
 	// No problems, client connected and bot running.
 	log.Println("Ready received! Ctrl-c to stop.")
-	// LOOKUP: Again, what the fuck is going on here?
+	// Kill bot process if the process recieves any type of kill signal, else do nothing.
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
-	// Close the Discord session.
+	// Close the Discord session upon kill signal received.
 	dsession.Close()
 }
 
@@ -118,7 +119,7 @@ func main() {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// This is the bot trigger.
 	const prefix = "Lola, please"
-	// wtf?
+	// Create an array called loadedRoles with the same properties as allowedRoles - these are used differently
 	loadedRoles := allowedRoles{}
 	// Check to see if the json file is there for roles.
 	if _, err := os.Stat("./allowedRoles.json"); err == nil {
@@ -269,4 +270,3 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 }
-// Poop.
